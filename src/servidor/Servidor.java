@@ -1,8 +1,10 @@
 package servidor;
 
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -14,12 +16,13 @@ public class Servidor {
 	public static void main(String[] args) {
 		try (ServerSocket ss = new ServerSocket(8000)) {
 			listaJuegos = new ArrayList<Juego>();
-			listaJuegos.add(new Juego());
+			listaJuegos.add(new Juego(1));
 			
 			while (true) {
 				try {
 					Socket s = ss.accept();
-					mostarListaJuegos(s);
+					System.out.println("Se conecta un cliente");
+					mostrarListaMesas(s);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -29,15 +32,15 @@ public class Servidor {
 			e.printStackTrace();
 		}
 	}
-	
-	private static void mostarListaJuegos (Socket cliente) {
-		try {
-			DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
-			for (Juego juego : listaJuegos) {
-				dos.writeChars(juego.toString());
+
+	private static void mostrarListaMesas(Socket s) {
+		try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()))) {
+			for(Juego juego : listaJuegos) {
+				bw.write(juego.toString());
+				bw.newLine();
+				bw.flush();
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
