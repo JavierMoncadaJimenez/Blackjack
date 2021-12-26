@@ -52,14 +52,8 @@ public class Baraja implements Serializable {
 		}
 	}
 	
-	public static void main(String[] args) {
-		Baraja b = new Baraja();
-		b.barajar();
-		System.out.println(b.toString());
-		
-		b.robarCarta();
-		System.out.println();
-		System.out.println(b.toString());
+	public boolean estaVacia () {
+		return cartas.isEmpty();
 	}
 
 }

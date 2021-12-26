@@ -3,6 +3,7 @@ package logicaDeNegocio;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Mesa implements Serializable {
 	
@@ -20,9 +21,27 @@ public class Mesa implements Serializable {
 	}
 	
 	public void darCartaJugador(int numJugador, Carta carta) { 
-		listaCartasJugadores.get(numJugador - 1).add(carta);
+		listaCartasJugadores.get(numJugador).add(carta);
 	}
 	
+	@Override
+	public int hashCode() {
+		return Objects.hash(crupier, listaCartasJugadores);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Mesa other = (Mesa) obj;
+		return Objects.equals(crupier, other.crupier)
+				&& Objects.equals(listaCartasJugadores, other.listaCartasJugadores);
+	}
+
 	public void darCartaCrupier (Carta carta) {
 		crupier.add(carta);
 	}
@@ -48,20 +67,5 @@ public class Mesa implements Serializable {
 		}
 		
 		return estado;
-	}
-	
-	public static void main(String[] args) {
-		Baraja b = new Baraja();
-		b.barajar();
-		
-		Mesa m = new Mesa();
-		m.unirJugador();
-		m.unirJugador();
-		m.darCartaCrupier(b.robarCarta());
-		m.darCartaJugador(1, b.robarCarta());
-		m.darCartaJugador(1, b.robarCarta());
-		m.darCartaJugador(2, b.robarCarta());
-		
-		System.out.println(m.toString());
 	}
 }

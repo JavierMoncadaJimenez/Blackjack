@@ -2,9 +2,10 @@ package servidor;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -26,15 +27,19 @@ public class Servidor {
 				try {
 					Socket s = ss.accept();
 					System.out.println("Se conecta un cliente");
-					mostrarListaMesas(s);
+					ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+					mostrarListaMesas(s, oos);
 					BufferedReader br = new BufferedReader(new InputStreamReader( s.getInputStream()));
-					int idMesa = Integer.parseInt(br.readLine()) - 1;
+					String numeroS = br.readLine();
+					int idMesa = Integer.parseInt(numeroS) - 1;
+					
+					//TODO hacer que no se pueda conectar si la mesa esta llena
 					
 					if (listaJuegos.get(idMesa).mesaVacia()) {
-						listaJuegos.get(idMesa).unirJugador(s);
+						listaJuegos.get(idMesa).unirJugador(s, oos);
 						pool.execute(listaJuegos.get(idMesa));
 					} else {
-						listaJuegos.get(idMesa).unirJugador(s);
+						listaJuegos.get(idMesa).unirJugador(s, oos);
 					}
 					
 					if (listaJuegos.get(idMesa).mesaLlena()) {
@@ -51,36 +56,20 @@ public class Servidor {
 		}
 	}
 
-	private static void mostrarListaMesas(Socket s) {
+	private static void mostrarListaMesas(Socket s, ObjectOutputStream oos) {
 		try {
-			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()));
+			
+			String listaMesas = "";
+			
 			for(Juego juego : listaJuegos) {
-				bw.write(juego.toString());
-				bw.newLine();
-				bw.flush();
+				listaMesas += juego.toString();
+				listaMesas += "\r\n";
 			}
 			
-			bw.write("listadoCompleto");
-			bw.newLine();
-			bw.flush();
+			oos.writeObject(listaMesas);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-	}
-	
-	public static void eliminarMesa(int idMesa) {
-		listaJuegos.remove(idMesa - 1);
-		
-		if (listaJuegos.isEmpty()) {
-			listaJuegos.add(new Juego(1));
-		}
-		
-		actualizarIndicesMesas (idMesa);
-	}
-
-	private static void actualizarIndicesMesas(int idMesa) {
-		// TODO tiene que descontar uno a todas las mesas que esten por encima del id del paramentro
 		
 	}
 	
