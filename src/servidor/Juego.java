@@ -12,7 +12,7 @@ import logicaDeNegocio.Jugador;
 import logicaDeNegocio.Mesa;
 
 public class Juego extends Thread {
-	private static int MAX_JUGADORES = 2;
+	private static int MAX_JUGADORES = 7;
 
 	private int idMesa;
 	private List<Jugador> clientes;
@@ -51,8 +51,11 @@ public class Juego extends Thread {
 					String comando = br.readLine();
 
 					procesarComando(clienteActual, comando);
+					
+					
 				} catch (IOException | NullPointerException e) {
 					clientes.remove(clientes.get(jugadorActual));
+					mesa.eliminarJugador(jugadorActual);
 					e.printStackTrace();
 				}
 			}
@@ -64,6 +67,15 @@ public class Juego extends Thread {
 			}
 		}
 
+	}
+	
+	public List<String> getNombreJugadores (){
+		List<String> nombres = new ArrayList<String>();
+		for (Jugador jugador: clientes) {
+			nombres.add(jugador.getNombre());
+		}
+		
+		return nombres;
 	}
 
 	private void reinicarJuego() {
@@ -77,6 +89,7 @@ public class Juego extends Thread {
 		}
 		
 		jugadoresPlantados = 0;
+		jugadorActual = 0;
 	}
 
 	private void procesarComando(Jugador clienteActual, String comando) throws IOException {
@@ -177,12 +190,27 @@ public class Juego extends Thread {
 		if (jugadorActual >= clientes.size()) {
 			jugadorActual = 0;
 		}
-
+		
+		if (!clientes.get(jugadorActual).isPlantado()) {
+			String nomJugadorActual = clientes.get(jugadorActual).getNombre();
+			
+			for (int i = 0; i < clientes.size(); i++) {
+				if (jugadorActual != i) {
+					try {
+						clientes.get(i).getSalidaCliente().writeObject("Turno de " + nomJugadorActual);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		
+		
 	}
 
 	public void unirJugador(Jugador jugador) {
 		clientes.add(jugador);
-		mesa.unirJugador();
+		mesa.unirJugador(jugador.getNombre());
 	}
 
 	public boolean mesaLlena() {
@@ -194,7 +222,7 @@ public class Juego extends Thread {
 	}
 
 	public String toString() {
-		return "Mesa " + idMesa + " con " + clientes.size() + " jugadores unidos";
+		return "Mesa " + idMesa + " con " + clientes.size() + " jugadores unidos de un maximo de " + MAX_JUGADORES;
 	}
 
 }

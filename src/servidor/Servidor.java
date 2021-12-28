@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import excepciones.MesaLLenaExcepcion;
 import logicaDeNegocio.Jugador;
 
 public class Servidor {
@@ -26,31 +27,17 @@ public class Servidor {
 			listaJuegos.add(new Juego(1));
 			
 			while (true) {
+				Jugador jugador= null ;
 				try {
 					Socket s = ss.accept();
 					System.out.println("Se conecta un cliente");
-					Jugador jugador = new Jugador(s);
-					mostrarListaMesas(s, jugador);
-					BufferedReader br = new BufferedReader(new InputStreamReader( s.getInputStream()));
-					String numeroS = br.readLine();
-					int idMesa = Integer.parseInt(numeroS) - 1;
-					
-					//TODO hacer que no se pueda conectar si la mesa esta llena
-					
-					if (listaJuegos.get(idMesa).mesaVacia()) {
-						listaJuegos.get(idMesa).unirJugador(jugador);
-						pool.execute(listaJuegos.get(idMesa));
-					} else {
-						listaJuegos.get(idMesa).unirJugador(jugador);
-					}
-					
-					if (listaJuegos.get(idMesa).mesaLlena()) {
-						listaJuegos.add(new Juego(listaJuegos.size() + 1));
-					}
+					jugador = new Jugador(s);
+					BufferedReader br = jugador.getEntradaCliente();
+					String nombre = br.readLine();
+					jugador.setNombre(nombre);
+					selecionMesa(pool, jugador);
 					
 				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (NumberFormatException e) {
 					e.printStackTrace();
 				}
 			}
@@ -60,7 +47,39 @@ public class Servidor {
 		}
 	}
 
-	private static void mostrarListaMesas(Socket s, Jugador jugador) {
+	private static void selecionMesa(ExecutorService pool, Jugador jugador) {
+		try {
+			mostrarListaMesas(jugador);
+			BufferedReader br = jugador.getEntradaCliente();
+			String numeroS = br.readLine();
+			int idMesa = Integer.parseInt(numeroS) - 1;
+			
+			if (listaJuegos.get(idMesa).mesaLlena()) {
+				throw new MesaLLenaExcepcion();
+			}
+			
+			if (listaJuegos.get(idMesa).mesaVacia()) {
+				listaJuegos.get(idMesa).unirJugador(jugador);
+				pool.execute(listaJuegos.get(idMesa));
+			} else {
+				listaJuegos.get(idMesa).unirJugador(jugador);
+			}
+			
+			if (listaJuegos.get(idMesa).mesaLlena()) {
+				listaJuegos.add(new Juego(listaJuegos.size() + 1));
+			}
+			
+			jugador.getSalidaCliente().writeObject("unido");
+			
+		} catch (NumberFormatException | IndexOutOfBoundsException | MesaLLenaExcepcion e) {
+			selecionMesa(pool, jugador);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+	private static void mostrarListaMesas(Jugador jugador) {
 		try {
 			
 			String listaMesas = "";

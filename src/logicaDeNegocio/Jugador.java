@@ -11,12 +11,14 @@ public class Jugador {
 	private BufferedReader entradaCliente;
 	private Socket cliente;
 	private boolean plantado;
+	private String nombre;
 	
 	public Jugador(Socket cliente) throws IOException {
 		this.cliente = cliente;
 		salidaCliente = new ObjectOutputStream (this.cliente.getOutputStream());
 		entradaCliente = new BufferedReader(new InputStreamReader(this.cliente.getInputStream()));
 		plantado = false;
+		this.nombre = nombre;
 	}
 
 	public ObjectOutputStream getSalidaCliente() {
@@ -50,4 +52,14 @@ public class Jugador {
 	public void setEntradaCliente(BufferedReader entradaCliente) {
 		this.entradaCliente = entradaCliente;
 	}
+
+	public String getNombre() {
+		return nombre;
+	}
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+	
+	
 }
