@@ -1,15 +1,8 @@
 package servidor;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,8 +31,8 @@ public class Juego extends Thread {
 	}
 
 	public void run() {
-		reinicarJuego ();
-		
+		reinicarJuego();
+
 		while (clientes.size() != 0) {
 			Jugador clienteActual = clientes.get(jugadorActual);
 
@@ -76,8 +69,14 @@ public class Juego extends Thread {
 	private void reinicarJuego() {
 		baraja = new Baraja();
 		baraja.barajar();
+		mesa.reinicairMesa();
 		mesa.darCartaCrupier(baraja.robarCarta());
+
+		for (Jugador jugador : clientes) {
+			jugador.setPlantado(false);
+		}
 		
+		jugadoresPlantados = 0;
 	}
 
 	private void procesarComando(Jugador clienteActual, String comando) throws IOException {
@@ -102,6 +101,7 @@ public class Juego extends Thread {
 
 	private void salirCliente(Jugador clienteActual) throws IOException {
 		clientes.remove(clienteActual);
+		mesa.eliminarJugador(jugadorActual);
 		ObjectOutputStream bw = clienteActual.getSalidaCliente();
 		bw.writeObject("Has salido correctamente");
 		bw.flush();
@@ -113,11 +113,11 @@ public class Juego extends Thread {
 		bw.writeObject(carta);
 		bw.flush();
 		int puntosJugador = mesa.getPuntosJugador(jugadorActual);
-		
+
 		bw.writeObject(String.valueOf(puntosJugador));
 		bw.flush();
-		
-		if ( puntosJugador > 21) {
+
+		if (puntosJugador > 21) {
 			plantarJugador();
 		}
 
@@ -144,29 +144,28 @@ public class Juego extends Thread {
 
 		comporbarPuntos();
 
+		reinicarJuego();
+
 	}
 
 	private void comporbarPuntos() {
 		int puntosCrupier = mesa.puntosCrupier();
 
-		if (puntosCrupier < 21) {
-			for (int i = 0; i < clientes.size(); i++) {
-				int puntosJugador = mesa.getPuntosJugador(i);
-				try {
-					ObjectOutputStream salida =  clientes.get(i).getSalidaCliente();
-					salida.writeObject("La ronda ha terminado");
-					salida.reset();
-					salida.writeObject(mesa);
-					if (puntosCrupier > puntosJugador) {
-						salida.writeObject("Has perdido");
-					} 
-					else {
-						salida.writeObject("Has ganado");
-					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+		for (int i = 0; i < clientes.size(); i++) {
+			int puntosJugador = mesa.getPuntosJugador(i);
+			try {
+				ObjectOutputStream salida = clientes.get(i).getSalidaCliente();
+				salida.writeObject("La ronda ha terminado");
+				salida.reset();
+				salida.writeObject(mesa);
+				if ((puntosCrupier > puntosJugador || puntosJugador > 21) && puntosCrupier <= 21) {
+					salida.writeObject("Has perdido");
+				} else {
+					salida.writeObject("Has ganado");
 				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 
@@ -178,7 +177,6 @@ public class Juego extends Thread {
 		if (jugadorActual >= clientes.size()) {
 			jugadorActual = 0;
 		}
-		
 
 	}
 

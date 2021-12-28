@@ -46,7 +46,14 @@ public class Mesa implements Serializable {
 	}
 	
 	public void eliminarJugador (int numJugador)  {
-		
+		listaCartasJugadores.remove(numJugador);
+	}
+	
+	public void reinicairMesa () {
+		crupier.clear();
+		for (List<Carta> cartas : listaCartasJugadores) {
+			cartas.clear();
+		}
 	}
 	
 	@Override
