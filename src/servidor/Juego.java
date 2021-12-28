@@ -15,80 +15,94 @@ import java.util.List;
 
 import logicaDeNegocio.Baraja;
 import logicaDeNegocio.Carta;
+import logicaDeNegocio.Jugador;
 import logicaDeNegocio.Mesa;
 
 public class Juego extends Thread {
 	private static int MAX_JUGADORES = 2;
-	
+
 	private int idMesa;
-	private List<Socket> clientes;
-	private List<ObjectOutputStream> salidaClientes;
+	private List<Jugador> clientes;
 	private Baraja baraja;
 	private Mesa mesa;
 	private int jugadoresPlantados;
 	private int jugadorActual;
-	
+
 	public Juego(int idMesa) {
 		baraja = new Baraja();
 		jugadorActual = 0;
-		baraja.barajar();
-		clientes = new ArrayList<Socket>();
-		salidaClientes = new ArrayList<ObjectOutputStream>();
+		clientes = new ArrayList<Jugador>();
 		mesa = new Mesa();
 		this.idMesa = idMesa;
 		jugadoresPlantados = 0;
 	}
-	
-	public void run() {
-		while (clientes.size() != 0) {
-			Socket clienteActual = clientes.get(jugadorActual);
-			
-			try {
-				BufferedReader br = new BufferedReader(new InputStreamReader( clienteActual.getInputStream()));
-				ObjectOutputStream bw = salidaClientes.get(jugadorActual);
-				
-				bw.writeObject("Es tu turno");
-				bw.flush();
-				
-				bw.reset();
-				bw.writeObject(mesa);
-				bw.flush();
 
-				String comando = br.readLine();
-				
-				procesarComando(clienteActual, bw, comando);
-				
-				System.out.println(comando);
-			} catch (IOException e) {
-				e.printStackTrace();
+	public void run() {
+		reinicarJuego ();
+		
+		while (clientes.size() != 0) {
+			Jugador clienteActual = clientes.get(jugadorActual);
+
+			if (!clienteActual.isPlantado()) {
+				try {
+					BufferedReader br = clienteActual.getEntradaCliente();
+					ObjectOutputStream bw = clienteActual.getSalidaCliente();
+
+					bw.writeObject("Es tu turno");
+					bw.flush();
+
+					bw.reset();
+					bw.writeObject(mesa);
+					bw.flush();
+
+					String comando = br.readLine();
+
+					procesarComando(clienteActual, comando);
+				} catch (IOException | NullPointerException e) {
+					clientes.remove(clientes.get(jugadorActual));
+					e.printStackTrace();
+				}
 			}
-			
-			actualizarTurno ();
-			
-			if(jugadoresPlantados == clientes.size()) {
+
+			actualizarTurno();
+
+			if (jugadoresPlantados == clientes.size()) {
 				terminarRonda();
 			}
 		}
+
+	}
+
+	private void reinicarJuego() {
+		baraja = new Baraja();
+		baraja.barajar();
+		mesa.darCartaCrupier(baraja.robarCarta());
 		
 	}
 
-	private void procesarComando(Socket clienteActual, ObjectOutputStream bw, String comando) throws IOException {
+	private void procesarComando(Jugador clienteActual, String comando) throws IOException {
+		ObjectOutputStream bw = clienteActual.getSalidaCliente();
 		if (comando.equals("cartas")) {
 			darCarta(bw);
 		}
-		
-		if(comando.equals("platarse")) {
-			jugadoresPlantados ++;
+
+		if (comando.equals("plantarse")) {
+			plantarJugador();
 		}
-		
+
 		if (comando.equals("salir")) {
-			salirCliente(clienteActual, bw);
+			salirCliente(clienteActual);
 		}
 	}
 
-	private void salirCliente(Socket clienteActual, ObjectOutputStream bw) throws IOException {
+	private void plantarJugador() {
+		jugadoresPlantados++;
+		clientes.get(jugadorActual).setPlantado(true);
+	}
+
+	private void salirCliente(Jugador clienteActual) throws IOException {
 		clientes.remove(clienteActual);
-		salidaClientes.remove(bw);
+		ObjectOutputStream bw = clienteActual.getSalidaCliente();
 		bw.writeObject("Has salido correctamente");
 		bw.flush();
 	}
@@ -98,44 +112,91 @@ public class Juego extends Thread {
 		mesa.darCartaJugador(jugadorActual, carta);
 		bw.writeObject(carta);
 		bw.flush();
+		int puntosJugador = mesa.getPuntosJugador(jugadorActual);
 		
+		bw.writeObject(String.valueOf(puntosJugador));
+		bw.flush();
+		
+		if ( puntosJugador > 21) {
+			plantarJugador();
+		}
+
+		comprobarBaraja();
+	}
+
+	private void comprobarBaraja() {
 		if (baraja.estaVacia()) {
 			baraja = new Baraja();
 			baraja.barajar();
 		}
 	}
-	
+
 	private void terminarRonda() {
-		// TODO Hacer que la ronda acabe sacando cartas al crupier
-		
+		boolean parar = false;
+		while (!parar) {
+			mesa.darCartaCrupier(baraja.robarCarta());
+			comprobarBaraja();
+
+			if (mesa.puntosCrupier() > 16) {
+				parar = true;
+			}
+		}
+
+		comporbarPuntos();
+
+	}
+
+	private void comporbarPuntos() {
+		int puntosCrupier = mesa.puntosCrupier();
+
+		if (puntosCrupier < 21) {
+			for (int i = 0; i < clientes.size(); i++) {
+				int puntosJugador = mesa.getPuntosJugador(i);
+				try {
+					ObjectOutputStream salida =  clientes.get(i).getSalidaCliente();
+					salida.writeObject("La ronda ha terminado");
+					salida.reset();
+					salida.writeObject(mesa);
+					if (puntosCrupier > puntosJugador) {
+						salida.writeObject("Has perdido");
+					} 
+					else {
+						salida.writeObject("Has ganado");
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
 	}
 
 	private void actualizarTurno() {
-		jugadorActual ++;
-		
+		jugadorActual++;
+
 		if (jugadorActual >= clientes.size()) {
 			jugadorActual = 0;
 		}
 		
+
 	}
 
-	public void unirJugador (Socket cliente, ObjectOutputStream oos ) {
-		clientes.add(cliente);
-		salidaClientes.add(oos);
+	public void unirJugador(Jugador jugador) {
+		clientes.add(jugador);
 		mesa.unirJugador();
 	}
-	
+
 	public boolean mesaLlena() {
 		return clientes.size() == MAX_JUGADORES;
 	}
-	
+
 	public boolean mesaVacia() {
 		return clientes.size() == 0;
 	}
-	
-	public String toString () {
+
+	public String toString() {
 		return "Mesa " + idMesa + " con " + clientes.size() + " jugadores unidos";
 	}
-	
-	
+
 }

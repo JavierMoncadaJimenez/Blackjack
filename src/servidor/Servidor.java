@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import logicaDeNegocio.Jugador;
+
 public class Servidor {
 	private static List<Juego> listaJuegos;
 	
@@ -27,8 +29,8 @@ public class Servidor {
 				try {
 					Socket s = ss.accept();
 					System.out.println("Se conecta un cliente");
-					ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-					mostrarListaMesas(s, oos);
+					Jugador jugador = new Jugador(s);
+					mostrarListaMesas(s, jugador);
 					BufferedReader br = new BufferedReader(new InputStreamReader( s.getInputStream()));
 					String numeroS = br.readLine();
 					int idMesa = Integer.parseInt(numeroS) - 1;
@@ -36,10 +38,10 @@ public class Servidor {
 					//TODO hacer que no se pueda conectar si la mesa esta llena
 					
 					if (listaJuegos.get(idMesa).mesaVacia()) {
-						listaJuegos.get(idMesa).unirJugador(s, oos);
+						listaJuegos.get(idMesa).unirJugador(jugador);
 						pool.execute(listaJuegos.get(idMesa));
 					} else {
-						listaJuegos.get(idMesa).unirJugador(s, oos);
+						listaJuegos.get(idMesa).unirJugador(jugador);
 					}
 					
 					if (listaJuegos.get(idMesa).mesaLlena()) {
@@ -47,6 +49,8 @@ public class Servidor {
 					}
 					
 				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (NumberFormatException e) {
 					e.printStackTrace();
 				}
 			}
@@ -56,7 +60,7 @@ public class Servidor {
 		}
 	}
 
-	private static void mostrarListaMesas(Socket s, ObjectOutputStream oos) {
+	private static void mostrarListaMesas(Socket s, Jugador jugador) {
 		try {
 			
 			String listaMesas = "";
@@ -66,7 +70,7 @@ public class Servidor {
 				listaMesas += "\r\n";
 			}
 			
-			oos.writeObject(listaMesas);
+			jugador.getSalidaCliente().writeObject(listaMesas);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

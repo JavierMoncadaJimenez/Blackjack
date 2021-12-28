@@ -24,6 +24,31 @@ public class Mesa implements Serializable {
 		listaCartasJugadores.get(numJugador).add(carta);
 	}
 	
+	public int puntosCrupier () {
+		int total = 0;
+		
+		for (Carta carta : crupier) {
+			total += carta.getValor();
+		}
+		
+		return total;
+	}
+	
+	public int getPuntosJugador (int numJugador) {
+		int total = 0;
+		List<Carta> cartasJugador = listaCartasJugadores.get(numJugador);
+		
+		for (Carta carta : cartasJugador) {
+			total += carta.getValor();
+		}
+		
+		return total;
+	}
+	
+	public void eliminarJugador (int numJugador)  {
+		
+	}
+	
 	@Override
 	public int hashCode() {
 		return Objects.hash(crupier, listaCartasJugadores);
@@ -47,7 +72,7 @@ public class Mesa implements Serializable {
 	}
 	
 	public String toString () {
-		String estado = "Crupier: ";
+		String estado = "El estado de la mesa es:\r\nCrupier: ";
 		
 		for (Carta cartaCrupie : crupier) {
 			estado += cartaCrupie.toString() + " ";
@@ -57,10 +82,10 @@ public class Mesa implements Serializable {
 		int numJugador = 1;
 		
 		for (List<Carta> jugador : listaCartasJugadores) {
-			estado += ",Jugador " + numJugador + ": ";
+			estado += "\r\n\tJugador " + numJugador + ": \r\n";
 			
 			for (Carta cartaJugador : jugador) {
-				estado += cartaJugador.toString() + " ";
+				estado += "\t\t" + cartaJugador.toString() + "\r\n";
 			}
 			
 			numJugador++;
