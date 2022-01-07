@@ -18,7 +18,6 @@ public class Jugador {
 		salidaCliente = new ObjectOutputStream (this.cliente.getOutputStream());
 		entradaCliente = new BufferedReader(new InputStreamReader(this.cliente.getInputStream()));
 		plantado = false;
-		this.nombre = nombre;
 	}
 
 	public ObjectOutputStream getSalidaCliente() {
@@ -60,6 +59,15 @@ public class Jugador {
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
-	
+
+	public void cerrarSocket() {
+		try {
+			cliente.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 	
 }

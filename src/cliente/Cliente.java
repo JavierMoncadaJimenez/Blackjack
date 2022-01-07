@@ -117,7 +117,7 @@ public class Cliente {
 			}
 		}
 		
-		System.out.println("Te has undio correctamente");
+		System.out.println("Te has undio correctamente, espera tu turno");
 	}
 
 	private static void procesarNombre(BufferedWriter bw, BufferedReader consola) throws IOException {

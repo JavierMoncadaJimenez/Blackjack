@@ -118,6 +118,7 @@ public class Juego extends Thread {
 		ObjectOutputStream bw = clienteActual.getSalidaCliente();
 		bw.writeObject("Has salido correctamente");
 		bw.flush();
+		clienteActual.cerrarSocket();
 	}
 
 	private void darCarta(ObjectOutputStream bw) throws IOException {
@@ -171,10 +172,10 @@ public class Juego extends Thread {
 				salida.writeObject("La ronda ha terminado");
 				salida.reset();
 				salida.writeObject(mesa);
-				if ((puntosCrupier > puntosJugador || puntosJugador > 21) && puntosCrupier <= 21) {
-					salida.writeObject("Has perdido");
+				if ((((puntosCrupier > puntosJugador) && puntosCrupier <= 21) || puntosJugador > 21)) {
+					salida.writeObject("Has perdido, reiniciando tablero");
 				} else {
-					salida.writeObject("Has ganado");
+					salida.writeObject("Has ganado, reiniciando tablero");
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
