@@ -52,6 +52,11 @@ public class Servidor {
 			mostrarListaMesas(jugador);
 			BufferedReader br = jugador.getEntradaCliente();
 			String numeroS = br.readLine();
+			
+			if (numeroS == null ) {
+				return;
+			}
+			
 			int idMesa = Integer.parseInt(numeroS) - 1;
 			
 			if (listaJuegos.get(idMesa).mesaLlena()) {
@@ -71,11 +76,11 @@ public class Servidor {
 			
 			jugador.getSalidaCliente().writeObject("unido");
 			
-		} catch (NumberFormatException | IndexOutOfBoundsException | MesaLLenaExcepcion e) {
-			selecionMesa(pool, jugador);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		} catch (NumberFormatException | IndexOutOfBoundsException | MesaLLenaExcepcion e) {
+			selecionMesa(pool, jugador);
+		} 
 		
 	}
 

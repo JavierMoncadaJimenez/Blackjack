@@ -12,7 +12,7 @@ import logicaDeNegocio.Jugador;
 import logicaDeNegocio.Mesa;
 
 public class Juego extends Thread {
-	private static int MAX_JUGADORES = 7;
+	private static int MAX_JUGADORES = 2;
 
 	private int idMesa;
 	private List<Jugador> clientes;
